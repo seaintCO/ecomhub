@@ -165,7 +165,7 @@ function Landing({ onCourse, onBuy, checkout, close, memberOpen, closeMember, ac
       <section className="pricing" id="pricing"><div><small>LIMITED-TIME FOUNDING OFFER</small><h2>Everything you need<br />to build it right.</h2><p>One payment. No monthly course fee. Keep every lesson, template and tool.</p></div><article><small>ECOM HUB · FOUNDING ACCESS</small><p className="price-was">Regularly $500</p><h3><sup>$</sup>299 <span>one time</span></h3><ul><li>40 lessons across 10 modules</li><li>Quizzes + flashcard study</li><li>Product research workspace</li><li>Inventory + profit trackers</li><li>Templates, scripts and SOPs</li><li>Lifetime curriculum updates</li></ul><button className="acid" onClick={onBuy}>Get Ecom Hub for $299 →</button><p>Educational program. Results depend on execution and market conditions.</p></article></section>
       <footer className="land-footer"><div className="logo"><i>E</i><b>Ecom Hub</b></div><p>Build intelligently. Sell responsibly. Scale what works.</p><span>© 2026 Ecom Hub</span></footer>
       {checkout && <div className="modal" onMouseDown={close}><article onMouseDown={(event) => event.stopPropagation()}><button onClick={close}>×</button><i>↗</i><h2>Checkout is being connected.</h2><p>Add the $299 Stripe Payment Link before publishing. Once payment is confirmed, students use the same checkout email to log in.</p><button className="acid" onClick={close}>Got it</button></article></div>}
-      {memberOpen && <MemberAccess close={closeMember} access={access} user={user} onOpenCourse={() => { closeMember(); setInside(true); }} />}
+      {memberOpen && <MemberAccess close={closeMember} access={access} user={user} onOpenCourse={onCourse} />}
     </main>
   );
 }

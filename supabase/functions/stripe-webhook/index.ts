@@ -1,3 +1,5 @@
+// @ts-nocheck
+// This is a Supabase Edge Function, not part of the Vercel build.
 import Stripe from "npm:stripe@22.0.0";
 import { createClient } from "npm:@supabase/supabase-js@2.98.0";
 
