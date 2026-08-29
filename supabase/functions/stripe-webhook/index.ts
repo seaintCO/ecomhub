@@ -14,7 +14,7 @@ const grantCourseAccess = async (session: Stripe.Checkout.Session) => {
   const email = session.customer_details?.email ?? session.customer_email;
   if (!email) return new Response("Checkout email missing", { status: 400 });
   const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-  const { error } = await db.from("course_purchases").upsert({ stripe_session_id: session.id, email: email.toLowerCase(), amount_cents: session.amount_total, currency: session.currency, paid_at: new Date().toISOString() }, { onConflict: "stripe_session_id" });
+  const { error } = await db.from("ecom_course_purchases").upsert({ stripe_session_id: session.id, email: email.toLowerCase(), amount_cents: session.amount_total, currency: session.currency, paid_at: new Date().toISOString() }, { onConflict: "stripe_session_id" });
   return error ? new Response("Could not grant course access", { status: 500 }) : null;
 };
 

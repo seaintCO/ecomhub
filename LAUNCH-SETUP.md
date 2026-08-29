@@ -11,7 +11,7 @@
 
 ## Test account reset
 
-Do not insert directly into `auth.users`. In Supabase Authentication → Users, delete the broken test user, then use **Add user → Create new user → Auto confirm user**. Add the matching email to `public.course_purchases` using a test `stripe_session_id`.
+Do not insert directly into `auth.users`. In Supabase Authentication → Users, delete the broken test user, then use **Add user → Create new user → Auto confirm user**. Add the matching email to `public.ecom_course_purchases` using a test `stripe_session_id`.
 
 ## Product Lab
 

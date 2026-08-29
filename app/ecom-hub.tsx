@@ -74,13 +74,17 @@ export default function EcomHub() {
   const buy = () => {
     const url = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK;
     if (url) window.open(url, "_blank", "noopener,noreferrer");
-    else setCheckout(true);
+    else {
+      // Test and preview mode: without a live payment link, the primary CTA opens member access.
+      setCheckout(false);
+      setMemberOpen(true);
+    }
   };
   const refreshAccess = async (currentUser: User | null) => {
     if (!supabase) { setAccess("unconfigured"); return; }
     if (!currentUser?.email) { setAccess("not-granted"); return; }
     setAccess("checking");
-    const { data, error } = await supabase.from("course_purchases").select("stripe_session_id").eq("email", currentUser.email.toLowerCase()).limit(1);
+    const { data, error } = await supabase.from("ecom_course_purchases").select("stripe_session_id").eq("email", currentUser.email.toLowerCase()).limit(1);
     setAccess(!error && (data?.length ?? 0) > 0 ? "granted" : "not-granted");
   };
   useEffect(() => {
@@ -100,7 +104,10 @@ export default function EcomHub() {
   }, []);
   const openCourse = () => {
     if (access === "granted") setInside(true);
-    else setMemberOpen(true);
+    else {
+      setCheckout(false);
+      setMemberOpen(true);
+    }
   };
   const signOut = async () => { await supabase?.auth.signOut(); setInside(false); notify("Signed out"); };
   const toggleLesson = (id: string) => {
