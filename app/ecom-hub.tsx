@@ -143,18 +143,12 @@ export default function EcomHub() {
 function Landing({ onCourse, onBuy, checkout, close, memberOpen, closeMember, access, user, refreshAccess }: { onCourse: () => void; onBuy: () => void; checkout: boolean; close: () => void; memberOpen: boolean; closeMember: () => void; access: "checking" | "granted" | "not-granted" | "unconfigured"; user: User | null; refreshAccess: () => void }) {
   return (
     <main className="landing">
-      <nav className="land-nav"><div className="logo"><i>E</i><b>Ecom Hub</b></div><div><a href="#curriculum">Curriculum</a><a href="#tools">Tools</a><a href="#pricing">Pricing</a></div><button className="outline" onClick={onCourse}>{access === "granted" ? "Open your course ↗" : "Member login ↗"}</button></nav>
-      <section className="hero">
-        <small><i /> THE COMPLETE E-COMMERCE OPERATING SYSTEM</small>
-        <h1>Build the store.<em>Learn the business.</em></h1>
-        <p>From first product idea to a store that can scale—Ecom Hub gives you the course, research system and operating tools to build with confidence.</p>
-        <div><button className="acid" onClick={onBuy}>Get lifetime access — $299 <span>→</span></button><button className="watch" onClick={onCourse}><i>▶</i> Member login</button></div>
-        <footer><span><b>40</b> step-by-step lessons</span><span><b>7</b> business tools</span><span><b>1</b> complete launch plan</span></footer>
+      <nav className="land-nav"><div className="logo"><i>E</i><b>Ecom Hub</b></div><div><a href="#curriculum">Curriculum</a><a href="#tools">Command center</a><a href="#pricing">Access</a></div><button className="outline" onClick={onCourse}>{access === "granted" ? "Open workspace ↗" : "Member login ↗"}</button></nav>
+      <section className="hero hero-premium">
+        <div className="hero-copy"><small><i /> ECOMMERCE INTELLIGENCE SYSTEM · 01</small><h1>Stop guessing.<em>Operate with proof.</em></h1><p>Ecom Hub turns product research, store building and real operating numbers into one focused system—built for founders who want to launch with conviction.</p><div><button className="acid" onClick={onBuy}>Get lifetime access — $299 <span>→</span></button><button className="watch" onClick={onCourse}><i>↗</i> Log in to workspace</button></div><footer><span><b>40</b> step-by-step lessons</span><span><b>7</b> operating tools</span><span><b>9.5h</b> focused curriculum</span></footer></div>
+        <div className="hero-console" aria-label="Ecom Hub product intelligence preview"><div className="console-top"><span><i /> LIVE COMMAND CENTER</span><b>ECOM / 001</b></div><div className="console-score"><div><small>PRODUCT CONFIDENCE</small><strong>92<span>/100</span></strong><p>Validated test candidate</p></div><svg viewBox="0 0 220 90" aria-hidden="true"><path d="M0 75 C25 72 32 56 49 59 S75 31 91 43 S118 29 134 36 S160 11 177 19 S202 2 220 8" fill="none" stroke="currentColor" strokeWidth="3"/><path d="M0 90 V75 C25 72 32 56 49 59 S75 31 91 43 S118 29 134 36 S160 11 177 19 S202 2 220 8 V90Z" fill="currentColor" opacity=".12"/></svg></div><div className="console-panels"><article><small>BREAK-EVEN ROAS</small><b>1.84×</b><span>Safe test threshold</span></article><article><small>EST. MARGIN</small><b>64%</b><span className="up">↑ healthy economics</span></article><article className="console-focus"><small>NEXT ACTION</small><b>Validate supplier sample</b><button onClick={onCourse}>Open workflow →</button></article></div><div className="console-feed"><span>LIVE SIGNALS</span><p><i /> Demand rising across short-form video</p><p><i /> 3 supplier options shortlisted</p></div></div>
       </section>
-      <section className="product-shot">
-        <div className="window"><span>● ● ●</span><b>app.ecomhub.co/dashboard</b><small>LIVE STUDENT EXPERIENCE</small></div>
-        <div className="shot-body"><aside><i>E</i>{["⌂", "▶", "⌕", "□", "↗", "✎"].map((x, n) => <span className={n === 0 ? "sel" : ""} key={x}>{x}</span>)}</aside><div className="shot-main"><small>WEEK 1 · BUILD YOUR FOUNDATION</small><h2>Good morning, founder.</h2><p>Your next milestone is one focused lesson away.</p><div className="shot-grid"><article><div><span>01</span><b>ECOM<br />FOUNDATION</b></div><section><small>MEMBER WORKSPACE</small><h3>The modern e-commerce map</h3><button onClick={onCourse}>Open course →</button></section></article><article><small>PRODUCT SCORE</small><b>92</b><span>Strong test candidate</span><i /></article><article><small>LAUNCH READINESS</small><b>38%</b><span>4 milestones complete</span></article></div></div></div>
-      </section>
+      <section className="proof-strip"><p>RESEARCH <i>✦</i> BUILD <i>✦</i> TEST <i>✦</i> SCALE</p><span>DESIGNED FOR FOUNDERS WHO EXECUTE</span></section>
       <section className="features" id="tools"><small>MORE THAN A COURSE</small><h2>Your entire e-commerce<br />workspace, in one place.</h2><div>{[
         ["01", "⌕", "Product Lab", "Score ideas and open real research sources before committing capital."],
         ["02", "□", "Inventory Control", "Track supplier, landed cost, price, stock and product status."],
@@ -172,6 +166,8 @@ function Landing({ onCourse, onBuy, checkout, close, memberOpen, closeMember, ac
 
 function MemberAccess({ close, access, user, onOpenCourse }: { close: () => void; access: "checking" | "granted" | "not-granted" | "unconfigured"; user: User | null; onOpenCourse: () => void }) {
   const [email, setEmail] = useState(user?.email ?? "");
+  const [password, setPassword] = useState("");
+  const [mode, setMode] = useState<"password" | "link" | "create">("password");
   const [message, setMessage] = useState("");
   const sendLink = async () => {
     if (!supabase || !email) return;
@@ -179,7 +175,15 @@ function MemberAccess({ close, access, user, onOpenCourse }: { close: () => void
     const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin, shouldCreateUser: true } });
     setMessage(error ? error.message : "Check your inbox for your secure sign-in link.");
   };
-  return <div className="modal" onMouseDown={close}><article onMouseDown={(event) => event.stopPropagation()}><button onClick={close}>×</button><i>⌁</i><h2>{access === "granted" ? "Your course is ready." : "Member access"}</h2>{access === "unconfigured" ? <p>Member access is being connected. Please check back shortly.</p> : access === "granted" ? <button className="acid" onClick={onOpenCourse}>Open Ecom Hub →</button> : <><p>Use the same email address used at checkout. We&apos;ll send you a secure sign-in link.</p><input aria-label="Email address" type="email" placeholder="you@email.com" value={email} onChange={(event) => setEmail(event.target.value)} /><button className="acid" onClick={sendLink}>Email my sign-in link →</button>{message && <p>{message}</p>}</>}</article></div>;
+  const submitPassword = async () => {
+    if (!supabase || !email || !password) return;
+    setMessage(mode === "create" ? "Creating your account…" : "Signing you in…");
+    const result = mode === "create"
+      ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } })
+      : await supabase.auth.signInWithPassword({ email, password });
+    setMessage(result.error ? result.error.message : mode === "create" ? "Account created. Check your email if confirmation is required, then log in." : "Signed in. Checking your course access…");
+  };
+  return <div className="modal" onMouseDown={close}><article className="member-card" onMouseDown={(event) => event.stopPropagation()}><button onClick={close}>×</button><i>⌁</i><h2>{access === "granted" ? "Your course is ready." : "Member access"}</h2>{access === "unconfigured" ? <p>Member access is being connected. Please check back shortly.</p> : access === "granted" ? <button className="acid" onClick={onOpenCourse}>Open Ecom Hub →</button> : <><p>Use the email tied to your Ecom Hub purchase.</p><div className="login-tabs"><button className={mode === "password" ? "active" : ""} onClick={() => setMode("password")}>Password</button><button className={mode === "link" ? "active" : ""} onClick={() => setMode("link")}>Email link</button></div><input aria-label="Email address" type="email" placeholder="you@email.com" value={email} onChange={(event) => setEmail(event.target.value)} />{mode !== "link" && <input aria-label="Password" type="password" placeholder="Password" value={password} onChange={(event) => setPassword(event.target.value)} />} {mode === "link" ? <button className="acid" onClick={sendLink}>Email my sign-in link →</button> : <button className="acid" onClick={submitPassword}>{mode === "create" ? "Create account →" : "Log in →"}</button>}<button className="text-action" onClick={() => setMode(mode === "create" ? "password" : "create")}>{mode === "create" ? "Already have an account? Log in" : "First time here? Create your account"}</button>{message && <p className="auth-message">{message}</p>}</>}</article></div>;
 }
 
 function Title({ eyebrow, title, text, action }: { eyebrow: string; title: string; text: string; action?: React.ReactNode }) {
