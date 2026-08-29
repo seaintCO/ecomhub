@@ -85,7 +85,9 @@ export default function EcomHub() {
     if (!currentUser?.email) { setAccess("not-granted"); return; }
     setAccess("checking");
     const { data, error } = await supabase.from("ecom_course_purchases").select("stripe_session_id").eq("email", currentUser.email.toLowerCase()).limit(1);
-    setAccess(!error && (data?.length ?? 0) > 0 ? "granted" : "not-granted");
+    const granted = !error && (data?.length ?? 0) > 0;
+    setAccess(granted ? "granted" : "not-granted");
+    if (granted) setInside(true);
   };
   useEffect(() => {
     if (!supabase) { setAccess("unconfigured"); return; }
