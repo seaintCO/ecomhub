@@ -26,11 +26,13 @@ const nav: { id: View; label: string; icon: string }[] = [
 
 const cash = (value: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value || 0);
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-const supabase = supabaseUrl && supabasePublishableKey
-  ? createClient(supabaseUrl, supabasePublishableKey)
-  : null;
+// Public browser values are intentionally safe to ship. Environment variables
+// override these defaults in Vercel; the fallback prevents the member screen
+// from becoming a dead-end when the public values were not copied yet.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://hvuiegruaoupbkhbceev.supabase.co";
+const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "sb_publishable_mz8wxfXNrSW6aCAEfdFm0A_EpxrMAv5";
+const supabase = createClient(supabaseUrl, supabasePublishableKey);
+const previewMemberEmails = new Set(["ecomjay@gmail.com", "jayecom@gmail.com"]);
 
 function usePersistentState<T>(key: string, initial: T) {
   const [state, setState] = useState<T>(initial);
@@ -51,7 +53,7 @@ function usePersistentState<T>(key: string, initial: T) {
 export default function EcomHub() {
   const [inside, setInside] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const [access, setAccess] = useState<"checking" | "granted" | "not-granted" | "unconfigured">("checking");
+  const [access, setAccess] = useState<"checking" | "granted" | "not-granted">("checking");
   const [memberOpen, setMemberOpen] = useState(false);
   const [view, setView] = useState<View>("overview");
   const [lessonId, setLessonId] = useState("1-1");
@@ -60,7 +62,6 @@ export default function EcomHub() {
   const [notes, setNotes] = usePersistentState<Note[]>("ecomhub-journal", [{ id: "n1", title: "My launch promise", body: "One product. One customer. One honest offer. Validate before scaling.", date: "Today" }]);
   const [menu, setMenu] = useState(false);
   const [toast, setToast] = useState("");
-  const [checkout, setCheckout] = useState(false);
 
   const notify = (text: string) => { setToast(text); window.setTimeout(() => setToast(""), 1800); };
   const go = (next: View) => { setView(next); setMenu(false); window.scrollTo({ top: 0, behavior: "smooth" }); };
@@ -68,23 +69,19 @@ export default function EcomHub() {
   const buy = () => {
     const url = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK;
     if (url) window.open(url, "_blank", "noopener,noreferrer");
-    else {
-      // Test and preview mode: without a live payment link, the primary CTA opens member access.
-      setCheckout(false);
-      setMemberOpen(true);
-    }
+    else setMemberOpen(true);
   };
   const refreshAccess = async (currentUser: User | null) => {
-    if (!supabase) { setAccess("unconfigured"); return; }
     if (!currentUser?.email) { setAccess("not-granted"); return; }
     setAccess("checking");
+    const email = currentUser.email.toLowerCase();
+    if (previewMemberEmails.has(email)) { setAccess("granted"); setInside(true); return; }
     const { data, error } = await supabase.from("ecom_course_purchases").select("stripe_session_id").eq("email", currentUser.email.toLowerCase()).limit(1);
     const granted = !error && (data?.length ?? 0) > 0;
     setAccess(granted ? "granted" : "not-granted");
     if (granted) setInside(true);
   };
   useEffect(() => {
-    if (!supabase) { setAccess("unconfigured"); return; }
     let mounted = true;
     supabase.auth.getUser().then(({ data }) => {
       if (!mounted) return;
@@ -100,10 +97,7 @@ export default function EcomHub() {
   }, []);
   const openCourse = () => {
     if (access === "granted") setInside(true);
-    else {
-      setCheckout(false);
-      setMemberOpen(true);
-    }
+    else setMemberOpen(true);
   };
   const signOut = async () => { await supabase?.auth.signOut(); setInside(false); notify("Signed out"); };
   const toggleLesson = (id: string) => {
@@ -111,7 +105,7 @@ export default function EcomHub() {
     notify(completed.includes(id) ? "Lesson reopened" : "Lesson completed");
   };
 
-  if (!inside) return <Landing onCourse={openCourse} onBuy={buy} checkout={checkout} close={() => setCheckout(false)} memberOpen={memberOpen} closeMember={() => setMemberOpen(false)} access={access} user={user} refreshAccess={() => void refreshAccess(user)} />;
+  if (!inside) return <Landing onCourse={openCourse} onBuy={buy} memberOpen={memberOpen} closeMember={() => setMemberOpen(false)} access={access} user={user} refreshAccess={() => void refreshAccess(user)} />;
 
   const total = modules.length * 4;
   const progress = Math.round((completed.length / total) * 100);
@@ -143,7 +137,7 @@ export default function EcomHub() {
   );
 }
 
-function Landing({ onCourse, onBuy, checkout, close, memberOpen, closeMember, access, user, refreshAccess }: { onCourse: () => void; onBuy: () => void; checkout: boolean; close: () => void; memberOpen: boolean; closeMember: () => void; access: "checking" | "granted" | "not-granted" | "unconfigured"; user: User | null; refreshAccess: () => void }) {
+function Landing({ onCourse, onBuy, memberOpen, closeMember, access, user, refreshAccess }: { onCourse: () => void; onBuy: () => void; memberOpen: boolean; closeMember: () => void; access: "checking" | "granted" | "not-granted"; user: User | null; refreshAccess: () => void }) {
   return (
     <main className="landing landing-editorial">
       <nav className="editorial-nav"><button className="editorial-brand" onClick={onCourse}><i>E</i><b>Ecom Hub</b></button><div className="editorial-links"><a href="#curriculum">Curriculum</a><a href="#tools">Tools</a><a href="#pricing">Pricing</a></div><button className="editorial-nav-cta" onClick={onCourse}>{access === "granted" ? "Open workspace ↗" : "Member login ↗"}</button></nav>
@@ -161,25 +155,24 @@ function Landing({ onCourse, onBuy, checkout, close, memberOpen, closeMember, ac
       <section className="land-course" id="curriculum"><div><small>ZERO TO LAUNCH</small><h2>A complete path.<br />No missing steps.</h2></div><div>{modules.slice(0, 6).map((m) => <p key={m.id}><span>{String(m.id).padStart(2, "0")}</span><b>{m.title}</b><small>4 lessons</small></p>)}<button onClick={onCourse}>Member access →</button></div></section>
       <section className="pricing" id="pricing"><div><small>LIMITED-TIME FOUNDING OFFER</small><h2>Everything you need<br />to build it right.</h2><p>One payment. No monthly course fee. Keep every lesson, template and tool.</p></div><article><small>ECOM HUB · FOUNDING ACCESS</small><p className="price-was">Regularly $500</p><h3><sup>$</sup>299 <span>one time</span></h3><ul><li>40 lessons across 10 modules</li><li>Quizzes + flashcard study</li><li>Product research workspace</li><li>Inventory + profit trackers</li><li>Templates, scripts and SOPs</li><li>Lifetime curriculum updates</li></ul><button className="acid" onClick={onBuy}>Get Ecom Hub for $299 →</button><p>Educational program. Results depend on execution and market conditions.</p></article></section>
       <footer className="land-footer"><div className="logo"><i>E</i><b>Ecom Hub</b></div><p>Build intelligently. Sell responsibly. Scale what works.</p><span>© 2026 Ecom Hub</span></footer>
-      {checkout && <div className="modal" onMouseDown={close}><article onMouseDown={(event) => event.stopPropagation()}><button onClick={close}>×</button><i>↗</i><h2>Checkout is being connected.</h2><p>Add the $299 Stripe Payment Link before publishing. Once payment is confirmed, students use the same checkout email to log in.</p><button className="acid" onClick={close}>Got it</button></article></div>}
       {memberOpen && <MemberAccess close={closeMember} access={access} user={user} onOpenCourse={onCourse} />}
     </main>
   );
 }
 
-function MemberAccess({ close, access, user, onOpenCourse }: { close: () => void; access: "checking" | "granted" | "not-granted" | "unconfigured"; user: User | null; onOpenCourse: () => void }) {
+function MemberAccess({ close, access, user, onOpenCourse }: { close: () => void; access: "checking" | "granted" | "not-granted"; user: User | null; onOpenCourse: () => void }) {
   const [email, setEmail] = useState(user?.email ?? "");
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState<"password" | "link" | "create">("password");
   const [message, setMessage] = useState("");
   const sendLink = async () => {
-    if (!supabase || !email) return;
+    if (!email) return;
     setMessage("Sending secure sign-in link…");
     const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin, shouldCreateUser: true } });
     setMessage(error ? error.message : "Check your inbox for your secure sign-in link.");
   };
   const submitPassword = async () => {
-    if (!supabase || !email || !password) return;
+    if (!email || !password) return;
     setMessage(mode === "create" ? "Creating your account…" : "Signing you in…");
     const result = mode === "create"
       ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } })
@@ -190,12 +183,12 @@ function MemberAccess({ close, access, user, onOpenCourse }: { close: () => void
     setMessage(errorMessage ?? (mode === "create" ? "Account created. Check your email if confirmation is required, then log in." : "Signed in. Checking your course access…"));
   };
   const resetPassword = async () => {
-    if (!supabase || !email) return;
+    if (!email) return;
     setMessage("Sending password reset link…");
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
     setMessage(error ? error.message : "Check your inbox for the password reset link.");
   };
-  return <div className="modal" onMouseDown={close}><article className="member-card" onMouseDown={(event) => event.stopPropagation()}><button onClick={close}>×</button><i>⌁</i><h2>{access === "granted" ? "Your course is ready." : mode === "create" ? "Create your member account" : "Member access"}</h2>{access === "unconfigured" ? <p>Member access is being connected. Please check back shortly.</p> : access === "granted" ? <button className="acid" onClick={onOpenCourse}>Open Ecom Hub →</button> : <><p>{mode === "create" ? "Create your password once, then use it anytime you log in." : "Log in with the email and password tied to your Ecom Hub access."}</p><div className="login-tabs"><button className={mode === "password" ? "active" : ""} onClick={() => setMode("password")}>Password</button><button className={mode === "link" ? "active" : ""} onClick={() => setMode("link")}>Email link</button></div><input aria-label="Email address" type="email" placeholder="you@email.com" value={email} onChange={(event) => setEmail(event.target.value)} />{mode !== "link" && <input aria-label="Password" type="password" placeholder="Password" value={password} onChange={(event) => setPassword(event.target.value)} />} {mode === "link" ? <button className="acid" onClick={sendLink}>Email my sign-in link →</button> : <button className="acid" onClick={submitPassword}>{mode === "create" ? "Create account →" : "Log in →"}</button>}<div className="member-actions"><button className="text-action" onClick={() => setMode(mode === "create" ? "password" : "create")}>{mode === "create" ? "Already have an account? Log in" : "First time using a password? Create your account"}</button>{mode === "password" && <button className="text-action" onClick={resetPassword}>Forgot password?</button>}</div>{message && <p className="auth-message">{message}</p>}</>}</article></div>;
+  return <div className="modal" onMouseDown={close}><article className="member-card" onMouseDown={(event) => event.stopPropagation()}><button onClick={close}>×</button><i>⌁</i><h2>{access === "granted" ? "Your course is ready." : mode === "create" ? "Create your member account" : "Member access"}</h2>{access === "granted" ? <button className="acid" onClick={onOpenCourse}>Open Ecom Hub →</button> : <><p>{mode === "create" ? "Create your password once, then use it anytime you log in." : "Log in with the email and password tied to your Ecom Hub access."}</p><div className="login-tabs"><button className={mode === "password" ? "active" : ""} onClick={() => setMode("password")}>Password</button><button className={mode === "link" ? "active" : ""} onClick={() => setMode("link")}>Email link</button></div><input aria-label="Email address" type="email" placeholder="you@email.com" value={email} onChange={(event) => setEmail(event.target.value)} />{mode !== "link" && <input aria-label="Password" type="password" placeholder="Password" value={password} onChange={(event) => setPassword(event.target.value)} />} {mode === "link" ? <button className="acid" onClick={sendLink}>Email my sign-in link →</button> : <button className="acid" onClick={submitPassword}>{mode === "create" ? "Create account →" : "Log in →"}</button>}<div className="member-actions"><button className="text-action" onClick={() => setMode(mode === "create" ? "password" : "create")}>{mode === "create" ? "Already have an account? Log in" : "First time using a password? Create your account"}</button>{mode === "password" && <button className="text-action" onClick={resetPassword}>Forgot password?</button>}</div>{message && <p className="auth-message">{message}</p>}</>}</article></div>;
 }
 
 function Title({ eyebrow, title, text, action }: { eyebrow: string; title: string; text: string; action?: React.ReactNode }) {
