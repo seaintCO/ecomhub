@@ -51,14 +51,7 @@ export const modules: Module[] = moduleInfo.map(([title, summary, color, video],
   })),
 }));
 
-export const researchProducts = [
-  { name: "Portable heat sealer", category: "Kitchen", score: 92, cost: 6.4, price: 24.99, velocity: "+38%", saturation: "Low" },
-  { name: "Travel compression cubes", category: "Travel", score: 89, cost: 11.2, price: 39.99, velocity: "+29%", saturation: "Medium" },
-  { name: "Rechargeable fabric shaver", category: "Home", score: 87, cost: 9.75, price: 29.99, velocity: "+24%", saturation: "Medium" },
-  { name: "Desk cable organizer kit", category: "Office", score: 84, cost: 4.2, price: 19.99, velocity: "+19%", saturation: "Low" },
-  { name: "Silicone scalp massager", category: "Beauty", score: 81, cost: 2.9, price: 14.99, velocity: "+17%", saturation: "High" },
-  { name: "Collapsible pet water bottle", category: "Pets", score: 79, cost: 7.1, price: 21.99, velocity: "+14%", saturation: "Medium" },
-];
+export type ResearchCandidate = { name: string; category: string; score: number; cost: number; price: number; velocity: string; saturation: string };
 
 export const flashcards = [
   ["Contribution margin", "Revenue left after variable costs: product, shipping, fees and ad spend."],
